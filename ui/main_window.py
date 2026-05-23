@@ -27,11 +27,11 @@ class MainWindow(
 
         self.resize(
             1600,
-            900
+            1000
         )
 
         self.setWindowTitle(
-            "OpenSmaart v0.6"
+            "OpenSmaart v0.9"
         )
 
         root = QWidget()
@@ -59,40 +59,21 @@ class MainWindow(
                 d["id"]
             )
 
-        self.ref = (
-            QSpinBox()
+        self.ref = QSpinBox()
+        self.meas = QSpinBox()
+
+        self.ref.setMinimum(1)
+        self.meas.setMinimum(1)
+
+        self.ref.setValue(1)
+        self.meas.setValue(2)
+
+        start = QPushButton(
+            "Start"
         )
 
-        self.meas = (
-            QSpinBox()
-        )
-
-        self.ref.setMinimum(
-            1
-        )
-
-        self.meas.setMinimum(
-            1
-        )
-
-        self.ref.setValue(
-            1
-        )
-
-        self.meas.setValue(
-            2
-        )
-
-        start = (
-            QPushButton(
-                "Start"
-            )
-        )
-
-        stop = (
-            QPushButton(
-                "Stop"
-            )
+        stop = QPushButton(
+            "Stop"
         )
 
         start.clicked.connect(
@@ -104,9 +85,7 @@ class MainWindow(
         )
 
         controls.addWidget(
-            QLabel(
-                "Device"
-            )
+            QLabel("Device")
         )
 
         controls.addWidget(
@@ -114,9 +93,7 @@ class MainWindow(
         )
 
         controls.addWidget(
-            QLabel(
-                "Ref"
-            )
+            QLabel("Ref")
         )
 
         controls.addWidget(
@@ -124,9 +101,7 @@ class MainWindow(
         )
 
         controls.addWidget(
-            QLabel(
-                "Meas"
-            )
+            QLabel("Meas")
         )
 
         controls.addWidget(
@@ -145,24 +120,44 @@ class MainWindow(
             controls
         )
 
-        self.plot = (
+        self.mag_plot = (
             pg.PlotWidget()
         )
 
-        self.plot.setLogMode(
+        self.mag_plot.setTitle(
+            "Magnitude"
+        )
+
+        self.mag_plot.setLogMode(
             x=True
         )
 
-        self.transfer_curve = (
-            self.plot.plot()
-        )
-
-        self.meas_curve = (
-            self.plot.plot()
+        self.mag_curve = (
+            self.mag_plot.plot()
         )
 
         layout.addWidget(
-            self.plot
+            self.mag_plot
+        )
+
+        self.phase_plot = (
+            pg.PlotWidget()
+        )
+
+        self.phase_plot.setTitle(
+            "Phase"
+        )
+
+        self.phase_plot.setLogMode(
+            x=True
+        )
+
+        self.phase_curve = (
+            self.phase_plot.plot()
+        )
+
+        layout.addWidget(
+            self.phase_plot
         )
 
         self.meter = (
@@ -174,7 +169,7 @@ class MainWindow(
         )
 
         self.engine.transfer_ready.connect(
-            self.update_plot
+            self.update_plots
         )
 
         self.engine.peak_ready.connect(
@@ -202,10 +197,11 @@ class MainWindow(
             1
         )
 
-    def update_plot(
+    def update_plots(
             self,
             data
     ):
+
         (
             freq,
             mag,
@@ -214,9 +210,14 @@ class MainWindow(
             delay
         ) = data
 
-        self.transfer_curve.setData(
+        self.mag_curve.setData(
             freq,
             mag
+        )
+
+        self.phase_curve.setData(
+            freq,
+            phase
         )
 
         self.setWindowTitle(
