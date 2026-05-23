@@ -153,7 +153,7 @@ class MainWindow(
             x=True
         )
 
-        self.ref_curve = (
+        self.transfer_curve = (
             self.plot.plot()
         )
 
@@ -173,7 +173,7 @@ class MainWindow(
             self.meter
         )
 
-        self.engine.fft_ready.connect(
+        self.engine.tf_ready.connect(
             self.update_plot
         )
 
@@ -206,17 +206,11 @@ class MainWindow(
             self,
             data
     ):
+        freq, mag = data
 
-        rf, rd, mf, md = data
-
-        self.ref_curve.setData(
-            rf,
-            rd
-        )
-
-        self.meas_curve.setData(
-            mf,
-            md
+        self.transfer_curve.setData(
+            freq,
+            mag
         )
 
     def update_peak(

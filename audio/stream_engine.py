@@ -1,4 +1,5 @@
 import sounddevice as sd
+
 import numpy as np
 
 from PyQt6.QtCore import (
@@ -6,48 +7,66 @@ from PyQt6.QtCore import (
     pyqtSignal
 )
 
-from dsp.fft import compute_fft
+from dsp.transfer import (
+    transfer_function
+)
 
 
-class StreamEngine(QObject):
+class StreamEngine(
+    QObject
+):
 
-    fft_ready = pyqtSignal(object)
+    tf_ready = pyqtSignal(
+        object
+    )
 
-    peak_ready = pyqtSignal(float)
+    peak_ready = pyqtSignal(
+        float
+    )
 
-    def __init__(self):
+    def __init__(
+            self
+    ):
 
         super().__init__()
 
         self.stream = None
 
     def start(
+
             self,
+
             device,
-            reference_ch,
-            measurement_ch
+
+            ref_ch,
+
+            meas_ch
     ):
 
         def callback(
+
                 indata,
+
                 frames,
+
                 time,
+
                 status
         ):
 
             try:
 
-                ref = np.copy(
+                ref = (
                     indata[
                         :,
-                        reference_ch
+                        ref_ch
                     ]
                 )
 
-                meas = np.copy(
+                meas = (
                     indata[
                         :,
-                        measurement_ch
+                        meas_ch
                     ]
                 )
 
@@ -55,29 +74,25 @@ class StreamEngine(QObject):
 
                 return
 
-            rf, rd = compute_fft(
-                ref
-            )
-
-            mf, md = compute_fft(
-                meas
-            )
-
-            peak = max(
-                np.max(
-                    np.abs(ref)
-                ),
-                np.max(
-                    np.abs(meas)
+            freq, mag = (
+                transfer_function(
+                    ref,
+                    meas
                 )
             )
 
-            self.fft_ready.emit(
+            peak = (
+                np.max(
+                    np.abs(
+                        meas
+                    )
+                )
+            )
+
+            self.tf_ready.emit(
                 (
-                    rf,
-                    rd,
-                    mf,
-                    md
+                    freq,
+                    mag
                 )
             )
 
@@ -94,7 +109,7 @@ class StreamEngine(QObject):
 
                 samplerate=48000,
 
-                blocksize=2048,
+                blocksize=4096,
 
                 callback=callback
             )
@@ -102,7 +117,9 @@ class StreamEngine(QObject):
 
         self.stream.start()
 
-    def stop(self):
+    def stop(
+            self
+    ):
 
         if self.stream:
 
