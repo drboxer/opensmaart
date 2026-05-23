@@ -1,5 +1,4 @@
 import sounddevice as sd
-
 import numpy as np
 
 from PyQt6.QtCore import (
@@ -8,7 +7,7 @@ from PyQt6.QtCore import (
 )
 
 from dsp.transfer import (
-    transfer_function
+    transfer_analysis
 )
 
 
@@ -16,12 +15,16 @@ class StreamEngine(
     QObject
 ):
 
-    tf_ready = pyqtSignal(
-        object
+    transfer_ready = (
+        pyqtSignal(
+            object
+        )
     )
 
-    peak_ready = pyqtSignal(
-        float
+    peak_ready = (
+        pyqtSignal(
+            float
+        )
     )
 
     def __init__(
@@ -33,40 +36,32 @@ class StreamEngine(
         self.stream = None
 
     def start(
-
             self,
-
             device,
-
-            ref_ch,
-
-            meas_ch
+            ref,
+            meas
     ):
 
         def callback(
-
                 indata,
-
                 frames,
-
                 time,
-
                 status
         ):
 
             try:
 
-                ref = (
+                reference = (
                     indata[
                         :,
-                        ref_ch
+                        ref
                     ]
                 )
 
-                meas = (
+                measurement = (
                     indata[
                         :,
-                        meas_ch
+                        meas
                     ]
                 )
 
@@ -74,26 +69,23 @@ class StreamEngine(
 
                 return
 
-            freq, mag = (
-                transfer_function(
-                    ref,
-                    meas
+            data = (
+                transfer_analysis(
+                    reference,
+                    measurement
                 )
             )
 
             peak = (
                 np.max(
                     np.abs(
-                        meas
+                        measurement
                     )
                 )
             )
 
-            self.tf_ready.emit(
-                (
-                    freq,
-                    mag
-                )
+            self.transfer_ready.emit(
+                data
             )
 
             self.peak_ready.emit(

@@ -173,7 +173,7 @@ class MainWindow(
             self.meter
         )
 
-        self.engine.tf_ready.connect(
+        self.engine.transfer_ready.connect(
             self.update_plot
         )
 
@@ -206,11 +206,25 @@ class MainWindow(
             self,
             data
     ):
-        freq, mag = data
+        (
+            freq,
+            mag,
+            phase,
+            coh,
+            delay
+        ) = data
 
         self.transfer_curve.setData(
             freq,
             mag
+        )
+
+        self.setWindowTitle(
+            (
+                "OpenSmaart "
+                f"| Delay "
+                f"{delay:.2f} ms"
+            )
         )
 
     def update_peak(

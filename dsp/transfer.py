@@ -1,30 +1,22 @@
 import numpy as np
 
 
-def transfer_function(
+EPS = 1e-10
+
+
+def transfer_analysis(
         reference,
-        measurement
+        measurement,
+        samplerate=48000
 ):
 
-    eps = 1e-10
+    reference = reference.flatten()
+    measurement = measurement.flatten()
 
-    ref_fft = np.fft.rfft(
-        reference
-    )
+    ref = np.fft.rfft(reference)
+    meas = np.fft.rfft(measurement)
 
-    meas_fft = np.fft.rfft(
-        measurement
-    )
-
-    h = (
-        meas_fft
-        /
-        (
-            ref_fft
-            +
-            eps
-        )
-    )
+    h = meas / (ref + EPS)
 
     magnitude = (
         20
@@ -32,14 +24,62 @@ def transfer_function(
         np.log10(
             np.maximum(
                 np.abs(h),
-                eps
+                EPS
             )
         )
     )
 
+    phase = np.unwrap(
+        np.angle(h)
+    )
+
+    phase = np.degrees(
+        phase
+    )
+
+    coherence = (
+        np.abs(
+            h
+        )
+    )
+
+    coherence = (
+        coherence
+        /
+        np.max(
+            coherence
+        )
+    )
+
+    corr = np.correlate(
+        measurement,
+        reference,
+        mode="full"
+    )
+
+    delay_samples = (
+        np.argmax(
+            corr
+        )
+        -
+        (
+            len(reference)
+            -
+            1
+        )
+    )
+
+    delay_ms = (
+        delay_samples
+        /
+        samplerate
+        *
+        1000
+    )
+
     freq = np.fft.rfftfreq(
         len(reference),
-        1 / 48000
+        1 / samplerate
     )
 
     keep = (
@@ -50,5 +90,8 @@ def transfer_function(
 
     return (
         freq[keep],
-        magnitude[keep]
+        magnitude[keep],
+        phase[keep],
+        coherence[keep],
+        delay_ms
     )
