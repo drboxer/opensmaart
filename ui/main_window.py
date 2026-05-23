@@ -14,13 +14,22 @@ class MainWindow(QMainWindow):
 
         self.engine = StreamEngine()
 
-        self.resize(1500, 900)
+        self.hold = None
 
-        self.setWindowTitle("OpenSmaart")
+        self.resize(
+            1500,
+            900
+        )
+
+        self.setWindowTitle(
+            "OpenSmaart v0.5"
+        )
 
         root = QWidget()
 
-        layout = QVBoxLayout(root)
+        layout = QVBoxLayout(
+            root
+        )
 
         controls = QHBoxLayout()
 
@@ -29,31 +38,49 @@ class MainWindow(QMainWindow):
         for d in list_input_devices():
 
             self.devices.addItem(
-                f'{d["id"]} | {d["name"]}',
+                d["name"],
                 d["id"]
             )
 
-        start = QPushButton("Start")
+        start = QPushButton(
+            "Start"
+        )
 
-        stop = QPushButton("Stop")
+        stop = QPushButton(
+            "Freeze"
+        )
 
-        start.clicked.connect(self.start_stream)
+        reset = QPushButton(
+            "Reset Hold"
+        )
+
+        start.clicked.connect(
+            self.start_stream
+        )
 
         stop.clicked.connect(
             self.engine.stop
         )
 
-        controls.addWidget(
-            QLabel("Input")
+        reset.clicked.connect(
+            self.reset_hold
         )
 
         controls.addWidget(
             self.devices
         )
 
-        controls.addWidget(start)
+        controls.addWidget(
+            start
+        )
 
-        controls.addWidget(stop)
+        controls.addWidget(
+            stop
+        )
+
+        controls.addWidget(
+            reset
+        )
 
         layout.addLayout(
             controls
@@ -61,13 +88,31 @@ class MainWindow(QMainWindow):
 
         self.plot = pg.PlotWidget()
 
-        self.curve = self.plot.plot()
+        self.plot.setLogMode(
+            x=True,
+            y=False
+        )
+
+        self.plot.setXRange(
+            np.log10(20),
+            np.log10(20000)
+        )
+
+        self.curve = (
+            self.plot.plot()
+        )
+
+        self.hold_curve = (
+            self.plot.plot()
+        )
 
         layout.addWidget(
             self.plot
         )
 
-        self.meter = QProgressBar()
+        self.meter = (
+            QProgressBar()
+        )
 
         layout.addWidget(
             self.meter
@@ -85,27 +130,67 @@ class MainWindow(QMainWindow):
             root
         )
 
-    def start_stream(self):
+    def start_stream(
+            self
+    ):
 
-        device = (
+        self.engine.start(
             self.devices.currentData()
         )
 
-        self.engine.start(
-            device
-        )
+    def update_fft(
+            self,
+            data
+    ):
 
-    def update_fft(self, data):
-
-        x, y = data
+        freq, db = data
 
         self.curve.setData(
-            x,
-            y
+            freq,
+            db
         )
 
-    def update_peak(self, value):
+        if (
+            self.hold
+            is None
+        ):
+
+            self.hold = db
+
+        else:
+
+            self.hold = (
+                self.hold * 0.995
+            )
+
+            self.hold = (
+                np.maximum(
+                    self.hold,
+                    db
+                )
+            )
+
+        self.hold_curve.setData(
+            freq,
+            self.hold
+        )
+
+    def update_peak(
+            self,
+            value
+    ):
 
         self.meter.setValue(
-            int(value * 100)
+            int(
+                value * 100
+            )
         )
+
+    def reset_hold(
+            self
+    ):
+
+        self.hold = None
+
+
+import numpy as np
