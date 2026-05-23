@@ -1,6 +1,5 @@
 import numpy as np
 
-
 EPS = 1e-10
 
 
@@ -19,8 +18,7 @@ def transfer_analysis(
     h = meas / (ref + EPS)
 
     magnitude = (
-        20
-        *
+        20 *
         np.log10(
             np.maximum(
                 np.abs(h),
@@ -29,25 +27,24 @@ def transfer_analysis(
         )
     )
 
-    phase = np.unwrap(
-        np.angle(h)
-    )
-
     phase = np.degrees(
-        phase
-    )
-
-    coherence = (
-        np.abs(
-            h
+        np.unwrap(
+            np.angle(h)
         )
     )
 
     coherence = (
-        coherence
-        /
-        np.max(
-            coherence
+        np.abs(
+            ref
+            *
+            np.conj(meas)
+        )
+    )
+
+    coherence /= (
+        np.maximum(
+            np.max(coherence),
+            EPS
         )
     )
 
@@ -58,9 +55,7 @@ def transfer_analysis(
     )
 
     delay_samples = (
-        np.argmax(
-            corr
-        )
+        np.argmax(corr)
         -
         (
             len(reference)
@@ -89,9 +84,14 @@ def transfer_analysis(
     )
 
     return (
+
         freq[keep],
+
         magnitude[keep],
+
         phase[keep],
+
         coherence[keep],
+
         delay_ms
     )

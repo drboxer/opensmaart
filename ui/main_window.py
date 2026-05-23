@@ -1,16 +1,12 @@
-import numpy as np
+import csv
 
 from PyQt6.QtWidgets import *
 
 import pyqtgraph as pg
 
-from audio.device_manager import (
-    list_input_devices
-)
+from audio.device_manager import list_input_devices
 
-from audio.stream_engine import (
-    StreamEngine
-)
+from audio.stream_engine import StreamEngine
 
 
 class MainWindow(
@@ -21,30 +17,22 @@ class MainWindow(
 
         super().__init__()
 
+        self.last = None
+
         self.engine = (
             StreamEngine()
         )
 
         self.resize(
-            1600,
-            1000
-        )
-
-        self.setWindowTitle(
-            "OpenSmaart v0.9"
+            1700,
+            1100
         )
 
         root = QWidget()
 
-        layout = (
-            QVBoxLayout(
-                root
-            )
-        )
+        layout = QVBoxLayout(root)
 
-        controls = (
-            QHBoxLayout()
-        )
+        top = QHBoxLayout()
 
         self.devices = (
             QComboBox()
@@ -60,12 +48,11 @@ class MainWindow(
             )
 
         self.ref = QSpinBox()
+
         self.meas = QSpinBox()
 
-        self.ref.setMinimum(1)
-        self.meas.setMinimum(1)
-
         self.ref.setValue(1)
+
         self.meas.setValue(2)
 
         start = QPushButton(
@@ -76,6 +63,14 @@ class MainWindow(
             "Stop"
         )
 
+        snap = QPushButton(
+            "Snapshot"
+        )
+
+        export = QPushButton(
+            "Export CSV"
+        )
+
         start.clicked.connect(
             self.start
         )
@@ -84,96 +79,78 @@ class MainWindow(
             self.engine.stop
         )
 
-        controls.addWidget(
-            QLabel("Device")
+        snap.clicked.connect(
+            self.snapshot
         )
 
-        controls.addWidget(
-            self.devices
+        export.clicked.connect(
+            self.export
         )
 
-        controls.addWidget(
-            QLabel("Ref")
-        )
+        for w in [
 
-        controls.addWidget(
-            self.ref
-        )
+            self.devices,
 
-        controls.addWidget(
-            QLabel("Meas")
-        )
+            self.ref,
 
-        controls.addWidget(
-            self.meas
-        )
+            self.meas,
 
-        controls.addWidget(
-            start
-        )
+            start,
 
-        controls.addWidget(
-            stop
-        )
+            stop,
+
+            snap,
+
+            export
+
+        ]:
+
+            top.addWidget(
+                w
+            )
 
         layout.addLayout(
-            controls
+            top
         )
 
-        self.mag_plot = (
+        self.mag = (
             pg.PlotWidget()
         )
 
-        self.mag_plot.setTitle(
-            "Magnitude"
+        self.phase = (
+            pg.PlotWidget()
         )
 
-        self.mag_plot.setLogMode(
-            x=True
+        self.coh = (
+            pg.PlotWidget()
         )
 
         self.mag_curve = (
-            self.mag_plot.plot()
-        )
-
-        layout.addWidget(
-            self.mag_plot
-        )
-
-        self.phase_plot = (
-            pg.PlotWidget()
-        )
-
-        self.phase_plot.setTitle(
-            "Phase"
-        )
-
-        self.phase_plot.setLogMode(
-            x=True
+            self.mag.plot()
         )
 
         self.phase_curve = (
-            self.phase_plot.plot()
+            self.phase.plot()
+        )
+
+        self.coh_curve = (
+            self.coh.plot()
         )
 
         layout.addWidget(
-            self.phase_plot
-        )
-
-        self.meter = (
-            QProgressBar()
+            self.mag
         )
 
         layout.addWidget(
-            self.meter
+            self.phase
+        )
+
+        layout.addWidget(
+            self.coh
         )
 
         self.engine.transfer_ready.connect(
-            self.update_plots
-        )
-
-        self.engine.peak_ready.connect(
-            self.update_peak
+            self.update
         )
 
         self.setCentralWidget(
@@ -188,27 +165,19 @@ class MainWindow(
 
             self.devices.currentData(),
 
-            self.ref.value()
-            -
-            1,
+            self.ref.value() - 1,
 
-            self.meas.value()
-            -
-            1
+            self.meas.value() - 1
         )
 
-    def update_plots(
+    def update(
             self,
             data
     ):
 
-        (
-            freq,
-            mag,
-            phase,
-            coh,
-            delay
-        ) = data
+        self.last = data
+
+        freq, mag, phase, coh, delay = data
 
         self.mag_curve.setData(
             freq,
@@ -220,23 +189,85 @@ class MainWindow(
             phase
         )
 
-        self.setWindowTitle(
-            (
-                "OpenSmaart "
-                f"| Delay "
-                f"{delay:.2f} ms"
-            )
+        self.coh_curve.setData(
+            freq,
+            coh
         )
 
-    def update_peak(
-            self,
-            value
+        self.setWindowTitle(
+            f"Delay {delay:.2f} ms"
+        )
+
+    def snapshot(
+            self
     ):
 
-        self.meter.setValue(
-            int(
-                value
-                *
-                100
+        if not self.last:
+
+            return
+
+        freq, mag, _, _, _ = (
+            self.last
+        )
+
+        self.mag.plot(
+            freq,
+            mag
+        )
+
+    def export(
+            self
+    ):
+
+        if not self.last:
+
+            return
+
+        file, _ = (
+            QFileDialog.getSaveFileName(
+                self,
+                "Export",
+                "",
+                "*.csv"
             )
         )
+
+        if not file:
+
+            return
+
+        freq, mag, phase, coh, _ = (
+            self.last
+        )
+
+        with open(
+                file,
+                "w",
+                newline=""
+        ) as f:
+
+            writer = (
+                csv.writer(
+                    f
+                )
+            )
+
+            writer.writerow(
+                [
+                    "Freq",
+                    "Mag",
+                    "Phase",
+                    "Coherence"
+                ]
+            )
+
+            for r in zip(
+                    freq,
+                    mag,
+                    phase,
+                    coh
+            ):
+
+                writer.writerow(
+                    r
+                )
