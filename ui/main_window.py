@@ -157,6 +157,10 @@ class MainWindow(
             root
         )
 
+        self.engine.peak_ready.connect(
+            self.update_peak
+        )
+
     def start(
             self
     ):
@@ -195,7 +199,30 @@ class MainWindow(
         )
 
         self.setWindowTitle(
-            f"Delay {delay:.2f} ms"
+            (
+                "OpenSmaart "
+                f"| Delay "
+                f"{delay:.2f} ms"
+            )
+        )
+
+    def update_peak(
+            self,
+            value
+    ):
+
+        normalized = max(
+            0,
+            min(
+                100,
+                value + 80
+            )
+        )
+
+        self.meter.setValue(
+            int(
+                normalized
+            )
         )
 
     def snapshot(

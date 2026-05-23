@@ -11,29 +11,47 @@ from dsp.transfer import (
 )
 
 
-class StreamEngine(
-    QObject
-):
+class StreamEngine(QObject):
 
-    transfer_ready = (
-        pyqtSignal(
-            object
-        )
-    )
+    transfer_ready = pyqtSignal(object)
 
-    peak_ready = (
-        pyqtSignal(
-            float
-        )
-    )
+    peak_ready = pyqtSignal(float)
 
-    def __init__(
-            self
-    ):
+    def __init__(self):
 
         super().__init__()
 
         self.stream = None
+
+        self.avg_mag = None
+        self.avg_phase = None
+        self.avg_coh = None
+
+        self.alpha = 0.20
+
+    def smooth(
+            self,
+            current,
+            previous
+    ):
+
+        if previous is None:
+
+            return current
+
+        return (
+            self.alpha
+            *
+            current
+            +
+            (
+                1
+                -
+                self.alpha
+            )
+            *
+            previous
+        )
 
     def start(
             self,
@@ -41,6 +59,8 @@ class StreamEngine(
             ref,
             meas
     ):
+
+        self.stop()
 
         def callback(
                 indata,
@@ -52,57 +72,80 @@ class StreamEngine(
             try:
 
                 reference = (
-                    indata[
-                        :,
-                        ref
-                    ]
+                    indata[:, ref]
                 )
 
                 measurement = (
-                    indata[
-                        :,
-                        meas
-                    ]
+                    indata[:, meas]
                 )
 
             except Exception:
 
                 return
 
-            data = (
-                transfer_analysis(
-                    reference,
-                    measurement
+            (
+                freq,
+                mag,
+                phase,
+                coh,
+                delay
+            ) = transfer_analysis(
+                reference,
+                measurement
+            )
+
+            self.avg_mag = self.smooth(
+                mag,
+                self.avg_mag
+            )
+
+            self.avg_phase = self.smooth(
+                phase,
+                self.avg_phase
+            )
+
+            self.avg_coh = self.smooth(
+                coh,
+                self.avg_coh
+            )
+
+            rms = np.sqrt(
+                np.mean(
+                    measurement ** 2
                 )
             )
 
-            peak = (
-                np.max(
-                    np.abs(
-                        measurement
+            peak_db = (
+                20
+                *
+                np.log10(
+                    max(
+                        rms,
+                        1e-9
                     )
                 )
             )
 
             self.transfer_ready.emit(
-                data
+                (
+                    freq,
+                    self.avg_mag,
+                    self.avg_phase,
+                    self.avg_coh,
+                    delay
+                )
             )
 
             self.peak_ready.emit(
-                peak
+                peak_db
             )
 
         self.stream = (
             sd.InputStream(
-
                 device=device,
-
                 channels=2,
-
                 samplerate=48000,
-
                 blocksize=4096,
-
                 callback=callback
             )
         )
