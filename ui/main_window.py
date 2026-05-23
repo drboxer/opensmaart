@@ -1,73 +1,136 @@
+import numpy as np
+
 from PyQt6.QtWidgets import *
 
 import pyqtgraph as pg
 
-from audio.device_manager import list_input_devices
-from audio.stream_engine import StreamEngine
+from audio.device_manager import (
+    list_input_devices
+)
+
+from audio.stream_engine import (
+    StreamEngine
+)
 
 
-class MainWindow(QMainWindow):
+class MainWindow(
+    QMainWindow
+):
 
     def __init__(self):
 
         super().__init__()
 
-        self.engine = StreamEngine()
-
-        self.hold = None
+        self.engine = (
+            StreamEngine()
+        )
 
         self.resize(
-            1500,
+            1600,
             900
         )
 
         self.setWindowTitle(
-            "OpenSmaart v0.5"
+            "OpenSmaart v0.6"
         )
 
         root = QWidget()
 
-        layout = QVBoxLayout(
-            root
+        layout = (
+            QVBoxLayout(
+                root
+            )
         )
 
-        controls = QHBoxLayout()
+        controls = (
+            QHBoxLayout()
+        )
 
-        self.devices = QComboBox()
+        self.devices = (
+            QComboBox()
+        )
 
-        for d in list_input_devices():
+        for d in (
+                list_input_devices()
+        ):
 
             self.devices.addItem(
                 d["name"],
                 d["id"]
             )
 
-        start = QPushButton(
-            "Start"
+        self.ref = (
+            QSpinBox()
         )
 
-        stop = QPushButton(
-            "Freeze"
+        self.meas = (
+            QSpinBox()
         )
 
-        reset = QPushButton(
-            "Reset Hold"
+        self.ref.setMinimum(
+            1
+        )
+
+        self.meas.setMinimum(
+            1
+        )
+
+        self.ref.setValue(
+            1
+        )
+
+        self.meas.setValue(
+            2
+        )
+
+        start = (
+            QPushButton(
+                "Start"
+            )
+        )
+
+        stop = (
+            QPushButton(
+                "Stop"
+            )
         )
 
         start.clicked.connect(
-            self.start_stream
+            self.start
         )
 
         stop.clicked.connect(
             self.engine.stop
         )
 
-        reset.clicked.connect(
-            self.reset_hold
+        controls.addWidget(
+            QLabel(
+                "Device"
+            )
         )
 
         controls.addWidget(
             self.devices
+        )
+
+        controls.addWidget(
+            QLabel(
+                "Ref"
+            )
+        )
+
+        controls.addWidget(
+            self.ref
+        )
+
+        controls.addWidget(
+            QLabel(
+                "Meas"
+            )
+        )
+
+        controls.addWidget(
+            self.meas
         )
 
         controls.addWidget(
@@ -78,31 +141,23 @@ class MainWindow(QMainWindow):
             stop
         )
 
-        controls.addWidget(
-            reset
-        )
-
         layout.addLayout(
             controls
         )
 
-        self.plot = pg.PlotWidget()
+        self.plot = (
+            pg.PlotWidget()
+        )
 
         self.plot.setLogMode(
-            x=True,
-            y=False
+            x=True
         )
 
-        self.plot.setXRange(
-            np.log10(20),
-            np.log10(20000)
-        )
-
-        self.curve = (
+        self.ref_curve = (
             self.plot.plot()
         )
 
-        self.hold_curve = (
+        self.meas_curve = (
             self.plot.plot()
         )
 
@@ -119,7 +174,7 @@ class MainWindow(QMainWindow):
         )
 
         self.engine.fft_ready.connect(
-            self.update_fft
+            self.update_plot
         )
 
         self.engine.peak_ready.connect(
@@ -130,49 +185,38 @@ class MainWindow(QMainWindow):
             root
         )
 
-    def start_stream(
+    def start(
             self
     ):
 
         self.engine.start(
-            self.devices.currentData()
+
+            self.devices.currentData(),
+
+            self.ref.value()
+            -
+            1,
+
+            self.meas.value()
+            -
+            1
         )
 
-    def update_fft(
+    def update_plot(
             self,
             data
     ):
 
-        freq, db = data
+        rf, rd, mf, md = data
 
-        self.curve.setData(
-            freq,
-            db
+        self.ref_curve.setData(
+            rf,
+            rd
         )
 
-        if (
-            self.hold
-            is None
-        ):
-
-            self.hold = db
-
-        else:
-
-            self.hold = (
-                self.hold * 0.995
-            )
-
-            self.hold = (
-                np.maximum(
-                    self.hold,
-                    db
-                )
-            )
-
-        self.hold_curve.setData(
-            freq,
-            self.hold
+        self.meas_curve.setData(
+            mf,
+            md
         )
 
     def update_peak(
@@ -182,15 +226,8 @@ class MainWindow(QMainWindow):
 
         self.meter.setValue(
             int(
-                value * 100
+                value
+                *
+                100
             )
         )
-
-    def reset_hold(
-            self
-    ):
-
-        self.hold = None
-
-
-import numpy as np
