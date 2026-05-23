@@ -1,59 +1,111 @@
 from PyQt6.QtWidgets import *
+
 import pyqtgraph as pg
+
 from audio.device_manager import list_input_devices
 from audio.stream_engine import StreamEngine
 
+
 class MainWindow(QMainWindow):
+
     def __init__(self):
+
         super().__init__()
-        self.engine=StreamEngine()
 
-        self.setWindowTitle("OpenSmaart v0.3")
-        self.resize(1400,850)
+        self.engine = StreamEngine()
 
-        root=QWidget()
-        layout=QVBoxLayout(root)
+        self.resize(1500, 900)
 
-        controls=QHBoxLayout()
+        self.setWindowTitle("OpenSmaart")
 
-        self.device=QComboBox()
-        for idx,name,ch in list_input_devices():
-            self.device.addItem(f"{idx} | {name} | IN:{ch}", idx)
+        root = QWidget()
 
-        self.sr=QComboBox()
-        self.sr.addItems(["44100","48000","96000"])
+        layout = QVBoxLayout(root)
 
-        self.channel=QSpinBox()
-        self.channel.setMinimum(1)
-        self.channel.setMaximum(32)
+        controls = QHBoxLayout()
 
-        start=QPushButton("Start")
-        stop=QPushButton("Stop")
-        start.clicked.connect(self.engine.start)
-        stop.clicked.connect(self.engine.stop)
+        self.devices = QComboBox()
 
-        controls.addWidget(QLabel("Input"))
-        controls.addWidget(self.device)
-        controls.addWidget(QLabel("Sample Rate"))
-        controls.addWidget(self.sr)
-        controls.addWidget(QLabel("Channel"))
-        controls.addWidget(self.channel)
+        for d in list_input_devices():
+
+            self.devices.addItem(
+                f'{d["id"]} | {d["name"]}',
+                d["id"]
+            )
+
+        start = QPushButton("Start")
+
+        stop = QPushButton("Stop")
+
+        start.clicked.connect(self.start_stream)
+
+        stop.clicked.connect(
+            self.engine.stop
+        )
+
+        controls.addWidget(
+            QLabel("Input")
+        )
+
+        controls.addWidget(
+            self.devices
+        )
+
         controls.addWidget(start)
+
         controls.addWidget(stop)
 
-        layout.addLayout(controls)
+        layout.addLayout(
+            controls
+        )
 
-        graph=pg.PlotWidget(title="Live FFT / RTA (placeholder)")
-        graph.setLabel("left","Level (dB)")
-        graph.setLabel("bottom","Frequency")
-        graph.plot([20,100,1000,10000,20000],[-70,-20,-15,-30,-60])
+        self.plot = pg.PlotWidget()
 
-        layout.addWidget(graph)
+        self.curve = self.plot.plot()
 
-        peak=QProgressBar()
-        peak.setValue(0)
+        layout.addWidget(
+            self.plot
+        )
 
-        layout.addWidget(QLabel("Peak"))
-        layout.addWidget(peak)
+        self.meter = QProgressBar()
 
-        self.setCentralWidget(root)
+        layout.addWidget(
+            self.meter
+        )
+
+        self.engine.fft_ready.connect(
+            self.update_fft
+        )
+
+        self.engine.peak_ready.connect(
+            self.update_peak
+        )
+
+        self.setCentralWidget(
+            root
+        )
+
+    def start_stream(self):
+
+        device = (
+            self.devices.currentData()
+        )
+
+        self.engine.start(
+            device
+        )
+
+    def update_fft(self, data):
+
+        x, y = data
+
+        self.curve.setData(
+            x,
+            y
+        )
+
+    def update_peak(self, value):
+
+        self.meter.setValue(
+            int(value * 100)
+        )
