@@ -407,11 +407,12 @@ class MainWindow(
             return
 
         if (
-                not
-                hasattr(
+                getattr(
                     self,
-                    "last"
+                    "last",
+                    None
                 )
+                is None
         ):
             QMessageBox.warning(
 
