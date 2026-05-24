@@ -10,6 +10,7 @@ from dsp.transfer import (
     transfer_analysis
 )
 
+from dsp.spl import SPLMeter
 
 class StreamEngine(QObject):
 
@@ -28,6 +29,7 @@ class StreamEngine(QObject):
         self.avg_coh = None
 
         self.alpha = 0.20
+        self.spl = SPLMeter()
 
     def smooth(
             self,
@@ -115,15 +117,8 @@ class StreamEngine(QObject):
                 )
             )
 
-            peak_db = (
-                20
-                *
-                np.log10(
-                    max(
-                        rms,
-                        1e-9
-                    )
-                )
+            spl = self.spl.compute(
+                measurement
             )
 
             self.transfer_ready.emit(
@@ -137,7 +132,7 @@ class StreamEngine(QObject):
             )
 
             self.peak_ready.emit(
-                peak_db
+                spl
             )
 
         self.stream = (

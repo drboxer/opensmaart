@@ -192,6 +192,14 @@ class MainWindow(
             QProgressBar()
         )
 
+        self.spl_label = QLabel(
+            "0.0 dB SPL"
+        )
+
+        layout.addWidget(
+            self.spl_label
+        )
+
         layout.addWidget(
             self.meter
         )
@@ -270,11 +278,15 @@ class MainWindow(
             value
     ):
 
+        self.spl_label.setText(
+            f"{value:.1f} dB SPL"
+        )
+
         normalized = max(
             0,
             min(
                 100,
-                value + 80
+                value
             )
         )
 
