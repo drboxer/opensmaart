@@ -10,6 +10,11 @@ from audio.stream_engine import StreamEngine
 
 from audio.signal_generator import SignalGenerator
 
+from project.session import (
+    save_session,
+    load_session
+)
+
 
 class MainWindow(
     QMainWindow
@@ -128,6 +133,22 @@ class MainWindow(
             self.export
         )
 
+        save_btn = QPushButton(
+            "Save"
+        )
+
+        load_btn = QPushButton(
+            "Load"
+        )
+
+        save_btn.clicked.connect(
+            self.save_project
+        )
+
+        load_btn.clicked.connect(
+            self.load_project
+        )
+
         for w in [
 
             self.devices,
@@ -150,7 +171,11 @@ class MainWindow(
 
             export,
 
-            cal
+            cal,
+
+            save_btn,
+
+            load_btn
 
         ]:
 
@@ -237,6 +262,7 @@ class MainWindow(
         self.engine.peak_ready.connect(
             self.update_peak
         )
+
 
     def start(
             self
@@ -450,4 +476,129 @@ class MainWindow(
             "Done",
 
             f"Calibrated to {value:.1f} dB SPL"
+        )
+
+    def save_project(
+            self
+    ):
+
+        file, _ = (
+            QFileDialog.getSaveFileName(
+
+                self,
+
+                "Save Session",
+
+                "",
+
+                "*.osm"
+            )
+        )
+
+        if not file:
+            return
+
+        data = {
+
+            "device":
+                self.devices.currentIndex(),
+
+            "ref":
+                self.ref.value(),
+
+            "meas":
+                self.meas.value(),
+
+            "spl_offset":
+                self.engine.spl.offset,
+
+            "measurement":
+                (
+                    None
+                    if
+                    self.last
+                    is None
+                    else [
+
+                        x.tolist()
+
+                        if hasattr(
+                            x,
+                            "tolist"
+                        )
+
+                        else x
+
+                        for x
+                        in self.last
+                    ]
+                )
+        }
+
+        save_session(
+            file,
+            data
+        )
+
+    def load_project(
+            self
+    ):
+
+        file, _ = (
+            QFileDialog.getOpenFileName(
+
+                self,
+
+                "Load Session",
+
+                "",
+
+                "*.osm"
+            )
+        )
+
+        if not file:
+            return
+
+        data = load_session(
+            file
+        )
+
+        self.devices.setCurrentIndex(
+            data[
+                "device"
+            ]
+        )
+
+        self.ref.setValue(
+            data[
+                "ref"
+            ]
+        )
+
+        self.meas.setValue(
+            data[
+                "meas"
+            ]
+        )
+
+        self.engine.spl.offset = (
+            data[
+                "spl_offset"
+            ]
+        )
+
+        self.last = (
+            data[
+                "measurement"
+            ]
+        )
+
+        QMessageBox.information(
+
+            self,
+
+            "Loaded",
+
+            "Session restored"
         )
