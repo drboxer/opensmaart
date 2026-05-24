@@ -26,6 +26,8 @@ class MainWindow(
 
         self.last = None
 
+        self.traces = []
+
         self.engine = (
             StreamEngine()
         )
@@ -84,6 +86,14 @@ class MainWindow(
 
         gen_stop = QPushButton(
             "Stop Gen"
+        )
+
+        clear = QPushButton(
+            "Clear Traces"
+        )
+
+        clear.clicked.connect(
+            self.clear_traces
         )
 
         cal = QPushButton(
@@ -175,7 +185,9 @@ class MainWindow(
 
             save_btn,
 
-            load_btn
+            load_btn,
+
+            clear
 
         ]:
 
@@ -336,18 +348,38 @@ class MainWindow(
             self
     ):
 
-        if not self.last:
-
+        if self.last is None:
             return
 
-        freq, mag, _, _, _ = (
-            self.last
-        )
+        (
+            freq,
+            mag,
+            phase,
+            coh,
+            delay
+        ) = self.last
 
-        self.mag.plot(
+        curve = self.mag.plot()
+
+        curve.setData(
             freq,
             mag
         )
+
+        self.traces.append(
+            curve
+        )
+
+    def clear_traces(
+            self
+    ):
+
+        for curve in self.traces:
+            self.mag.removeItem(
+                curve
+            )
+
+        self.traces.clear()
 
     def export(
             self
@@ -593,6 +625,25 @@ class MainWindow(
                 "measurement"
             ]
         )
+
+        if self.last:
+            freq, mag, _, _, _ = (
+                self.last
+            )
+
+            curve = (
+                self.mag.plot()
+            )
+
+            curve.setData(
+                freq,
+                mag
+            )
+
+            self.traces.append(
+                curve
+            )
+
 
         QMessageBox.information(
 
