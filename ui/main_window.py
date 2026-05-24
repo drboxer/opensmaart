@@ -8,6 +8,8 @@ from audio.device_manager import list_input_devices
 
 from audio.stream_engine import StreamEngine
 
+from audio.signal_generator import SignalGenerator
+
 
 class MainWindow(
     QMainWindow
@@ -21,6 +23,10 @@ class MainWindow(
 
         self.engine = (
             StreamEngine()
+        )
+
+        self.generator = (
+            SignalGenerator()
         )
 
         self.resize(
@@ -63,6 +69,33 @@ class MainWindow(
             "Stop"
         )
 
+        pink = QPushButton(
+            "Pink"
+        )
+
+        sine = QPushButton(
+            "1 kHz"
+        )
+
+        gen_stop = QPushButton(
+            "Stop Gen"
+        )
+
+        pink.clicked.connect(
+            self.generator.start_pink
+        )
+
+        sine.clicked.connect(
+            lambda:
+            self.generator.start_sine(
+                1000
+            )
+        )
+
+        gen_stop.clicked.connect(
+            self.generator.stop
+        )
+
         snap = QPushButton(
             "Snapshot"
         )
@@ -98,6 +131,12 @@ class MainWindow(
             start,
 
             stop,
+
+            pink,
+
+            sine,
+
+            gen_stop,
 
             snap,
 
@@ -135,6 +174,26 @@ class MainWindow(
 
         self.coh_curve = (
             self.coh.plot()
+        )
+
+        layout.addWidget(
+            self.mag
+        )
+
+        layout.addWidget(
+            self.phase
+        )
+
+        layout.addWidget(
+            self.coh
+        )
+
+        self.meter = (
+            QProgressBar()
+        )
+
+        layout.addWidget(
+            self.meter
         )
 
         layout.addWidget(
