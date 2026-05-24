@@ -81,6 +81,14 @@ class MainWindow(
             "Stop Gen"
         )
 
+        cal = QPushButton(
+            "Calibrate"
+        )
+
+        cal.clicked.connect(
+            self.calibrate
+        )
+
         pink.clicked.connect(
             self.generator.start_pink
         )
@@ -140,7 +148,9 @@ class MainWindow(
 
             snap,
 
-            export
+            export,
+
+            cal
 
         ]:
 
@@ -369,3 +379,74 @@ class MainWindow(
                 writer.writerow(
                     r
                 )
+
+    def calibrate(
+            self
+    ):
+
+        value, ok = (
+            QInputDialog.getDouble(
+
+                self,
+
+                "Calibration",
+
+                "Measured SPL:",
+
+                94.0,
+
+                40,
+
+                140,
+
+                1
+            )
+        )
+
+        if not ok:
+            return
+
+        if (
+                not
+                hasattr(
+                    self,
+                    "last"
+                )
+        ):
+            QMessageBox.warning(
+
+                self,
+
+                "No Data",
+
+                "Run measurement first"
+
+            )
+
+            return
+
+        freq, mag, phase, coh, delay = (
+            self.last
+        )
+
+        dummy = (
+                mag
+                /
+                100
+        )
+
+        self.engine.calibrate_spl(
+
+            value,
+
+            dummy
+        )
+
+        QMessageBox.information(
+
+            self,
+
+            "Done",
+
+            f"Calibrated to {value:.1f} dB SPL"
+        )

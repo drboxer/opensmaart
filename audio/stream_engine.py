@@ -158,3 +158,20 @@ class StreamEngine(QObject):
             self.stream.close()
 
             self.stream = None
+
+    def calibrate_spl(
+            self,
+            target,
+            samples
+    ):
+
+        measured = (
+            self.spl.compute(
+                samples
+            )
+        )
+
+        self.spl.calibrate(
+            measured,
+            target
+        )
