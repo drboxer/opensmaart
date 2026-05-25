@@ -290,6 +290,8 @@ class MainWindow(
             pg.PlotWidget()
         )
 
+        self.mag.addLegend()
+
         self.freq_cursor = (
             pg.InfiniteLine(
 
@@ -316,7 +318,12 @@ class MainWindow(
         )
 
         self.mag_curve = (
-            self.mag.plot()
+            self.mag.plot(
+
+                pen="y",
+
+                name="Live"
+            )
         )
 
         self.phase_curve = (
@@ -366,6 +373,25 @@ class MainWindow(
         self.engine.peak_ready.connect(
             self.update_peak
         )
+
+        self.traces = []
+
+        self.trace_colors = [
+
+            "r",
+
+            "g",
+
+            "b",
+
+            "c",
+
+            "m",
+
+            "y",
+
+            "w"
+        ]
 
 
     def start(
@@ -455,8 +481,31 @@ class MainWindow(
             self.last
         )
 
+        color = (
+
+            self.trace_colors[
+
+                len(
+                    self.traces
+                )
+
+                %
+
+                len(
+                    self.trace_colors
+                )
+                ]
+        )
+
         curve = (
-            self.mag.plot()
+
+            self.mag.plot(
+
+                pen=color,
+
+                name=f"Snap {len(self.traces) + 1}"
+
+            )
         )
 
         curve.setData(
@@ -758,7 +807,14 @@ class MainWindow(
             )
 
             curve = (
-                self.mag.plot()
+
+                self.mag.plot(
+
+                    pen="w",
+
+                    name="Loaded"
+
+                )
             )
 
             curve.setData(
