@@ -17,9 +17,7 @@ from project.session import (
 
 from dsp.smoothing import smooth
 
-from pyqtgraph import (
-    InfiniteLine
-)
+import pyqtgraph as pg
 
 class MainWindow(
     QMainWindow
@@ -83,9 +81,7 @@ class MainWindow(
             self.cursor_label
         )
 
-        self.cursor.sigPositionChanged.connect(
-            self.cursor_update
-        )
+
 
         start = QPushButton(
             "Start"
@@ -254,8 +250,8 @@ class MainWindow(
             pg.PlotWidget()
         )
 
-        self.cursor = (
-            InfiniteLine(
+        self.freq_cursor = (
+            pg.InfiniteLine(
 
                 angle=90,
 
@@ -264,7 +260,11 @@ class MainWindow(
         )
 
         self.mag.addItem(
-            self.cursor
+            self.freq_cursor
+        )
+
+        self.freq_cursor.sigPositionChanged.connect(
+            self.cursor_update
         )
 
         self.phase = (
@@ -285,18 +285,6 @@ class MainWindow(
 
         self.coh_curve = (
             self.coh.plot()
-        )
-
-        layout.addWidget(
-            self.mag
-        )
-
-        layout.addWidget(
-            self.phase
-        )
-
-        layout.addWidget(
-            self.coh
         )
 
         self.meter = (
@@ -392,16 +380,6 @@ class MainWindow(
                 f"{delay:.2f} ms"
             )
         )
-        if len(
-                freq
-        ):
-            self.cursor.setValue(
-                freq[
-                    len(freq)
-                    //
-                    2
-                    ]
-            )
 
     def update_peak(
             self,
@@ -444,8 +422,16 @@ class MainWindow(
         curve = self.mag.plot()
 
         curve.setData(
+
             freq,
-            mag
+
+            smooth(
+
+                mag,
+
+                self.smoothing
+
+            )
         )
 
         self.traces.append(
@@ -790,7 +776,7 @@ class MainWindow(
         )
 
         pos = (
-            self.cursor.value()
+            self.freq_cursor.value()
         )
 
         idx = (
