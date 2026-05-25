@@ -2,6 +2,8 @@ import csv
 
 from PyQt6.QtWidgets import *
 
+from PyQt6.QtCore import Qt
+
 import pyqtgraph as pg
 
 from audio.device_manager import list_input_devices
@@ -48,7 +50,45 @@ class MainWindow(
 
         layout = QVBoxLayout(root)
 
+        main = QHBoxLayout()
+
+        left = QVBoxLayout()
+
+        right = QVBoxLayout()
+
+        main.addLayout(
+            left,
+            1
+        )
+
+        main.addLayout(
+            right,
+            5
+        )
+
+        layout.addLayout(
+            main
+        )
+
         top = QHBoxLayout()
+
+        self.trace_list = (
+            QListWidget()
+        )
+
+        left.addWidget(
+            QLabel(
+                "Traces"
+            )
+        )
+
+        left.addWidget(
+            self.trace_list
+        )
+
+        self.trace_list.itemChanged.connect(
+            self.toggle_trace
+        )
 
         self.devices = (
             QComboBox()
@@ -295,23 +335,23 @@ class MainWindow(
             "0.0 dB SPL"
         )
 
-        layout.addWidget(
+        right.addWidget(
             self.spl_label
         )
 
-        layout.addWidget(
+        right.addWidget(
             self.meter
         )
 
-        layout.addWidget(
+        right.addWidget(
             self.mag
         )
 
-        layout.addWidget(
+        right.addWidget(
             self.phase
         )
 
-        layout.addWidget(
+        right.addWidget(
             self.coh
         )
 
@@ -411,31 +451,49 @@ class MainWindow(
         if self.last is None:
             return
 
-        (
-            freq,
-            mag,
-            phase,
-            coh,
-            delay
-        ) = self.last
+        freq, mag, *_ = (
+            self.last
+        )
 
-        curve = self.mag.plot()
+        curve = (
+            self.mag.plot()
+        )
 
         curve.setData(
 
             freq,
 
             smooth(
-
                 mag,
-
                 self.smoothing
-
             )
         )
 
         self.traces.append(
             curve
+        )
+
+        item = QListWidgetItem(
+
+            f"Snap {len(self.traces)}"
+
+        )
+
+        item.setFlags(
+
+            item.flags()
+
+            |
+
+            Qt.ItemFlag.ItemIsUserCheckable
+        )
+
+        item.setCheckState(
+            Qt.CheckState.Checked
+        )
+
+        self.trace_list.addItem(
+            item
         )
 
     def clear_traces(
@@ -794,4 +852,31 @@ class MainWindow(
                 f"{freq[idx]:.0f} Hz | "
                 f"{mag[idx]:.1f} dB"
             )
+        )
+
+    def toggle_trace(
+            self,
+            item
+    ):
+
+        idx = (
+            self.trace_list.row(
+                item
+            )
+        )
+
+        if idx >= len(
+                self.traces
+        ):
+            return
+
+        self.traces[
+            idx
+        ].setVisible(
+
+            item.checkState()
+
+            ==
+
+            Qt.CheckState.Checked
         )
