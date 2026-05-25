@@ -17,6 +17,10 @@ from project.session import (
 
 from dsp.smoothing import smooth
 
+from pyqtgraph import (
+    InfiniteLine
+)
+
 class MainWindow(
     QMainWindow
 ):
@@ -70,6 +74,18 @@ class MainWindow(
         self.ref.setValue(1)
 
         self.meas.setValue(2)
+
+        self.cursor_label = QLabel(
+            "Freq: - Hz"
+        )
+
+        layout.addWidget(
+            self.cursor_label
+        )
+
+        self.cursor.sigPositionChanged.connect(
+            self.cursor_update
+        )
 
         start = QPushButton(
             "Start"
@@ -238,6 +254,19 @@ class MainWindow(
             pg.PlotWidget()
         )
 
+        self.cursor = (
+            InfiniteLine(
+
+                angle=90,
+
+                movable=True
+            )
+        )
+
+        self.mag.addItem(
+            self.cursor
+        )
+
         self.phase = (
             pg.PlotWidget()
         )
@@ -363,6 +392,16 @@ class MainWindow(
                 f"{delay:.2f} ms"
             )
         )
+        if len(
+                freq
+        ):
+            self.cursor.setValue(
+                freq[
+                    len(freq)
+                    //
+                    2
+                    ]
+            )
 
     def update_peak(
             self,
@@ -737,4 +776,36 @@ class MainWindow(
             mapping[
                 index
             ]
+        )
+
+    def cursor_update(
+            self
+    ):
+
+        if self.last is None:
+            return
+
+        freq, mag, *_ = (
+            self.last
+        )
+
+        pos = (
+            self.cursor.value()
+        )
+
+        idx = (
+            abs(
+                freq
+                -
+                pos
+            )
+        ).argmin()
+
+        self.cursor_label.setText(
+
+            (
+                f"Freq: "
+                f"{freq[idx]:.0f} Hz | "
+                f"{mag[idx]:.1f} dB"
+            )
         )
