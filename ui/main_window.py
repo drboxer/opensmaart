@@ -151,6 +151,14 @@ class MainWindow(
             "Load"
         )
 
+        delay_btn = QPushButton(
+            "Find Delay"
+        )
+
+        delay_btn.clicked.connect(
+            self.show_delay
+        )
+
         save_btn.clicked.connect(
             self.save_project
         )
@@ -187,7 +195,9 @@ class MainWindow(
 
             load_btn,
 
-            clear
+            clear,
+
+            delay_btn
 
         ]:
 
@@ -652,4 +662,26 @@ class MainWindow(
             "Loaded",
 
             "Session restored"
+        )
+
+    def show_delay(
+            self
+    ):
+
+        if self.last is None:
+            return
+
+        delay = (
+            self.last[
+                4
+            ]
+        )
+
+        QMessageBox.information(
+
+            self,
+
+            "Delay",
+
+            f"{delay:.2f} ms"
         )

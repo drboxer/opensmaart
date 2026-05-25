@@ -12,6 +12,8 @@ from dsp.transfer import (
 
 from dsp.spl import SPLMeter
 
+from dsp.delay_finder import estimate_delay
+
 class StreamEngine(QObject):
 
     transfer_ready = pyqtSignal(object)
@@ -92,6 +94,10 @@ class StreamEngine(QObject):
                 coh,
                 delay
             ) = transfer_analysis(
+                reference,
+                measurement
+            )
+            delay = estimate_delay(
                 reference,
                 measurement
             )
