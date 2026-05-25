@@ -15,6 +15,7 @@ from project.session import (
     load_session
 )
 
+from dsp.smoothing import smooth
 
 class MainWindow(
     QMainWindow
@@ -50,6 +51,8 @@ class MainWindow(
         self.devices = (
             QComboBox()
         )
+
+        self.smoothing = 1
 
         for d in (
                 list_input_devices()
@@ -167,6 +170,26 @@ class MainWindow(
             self.load_project
         )
 
+        self.smooth_box = QComboBox()
+
+        self.smooth_box.addItems([
+
+            "Off",
+
+            "1/24",
+
+            "1/12",
+
+            "1/6",
+
+            "1/3"
+
+        ])
+
+        self.smooth_box.currentIndexChanged.connect(
+            self.change_smoothing
+        )
+
         for w in [
 
             self.devices,
@@ -174,6 +197,8 @@ class MainWindow(
             self.ref,
 
             self.meas,
+
+            self.smooth_box,
 
             start,
 
@@ -309,8 +334,16 @@ class MainWindow(
         freq, mag, phase, coh, delay = data
 
         self.mag_curve.setData(
+
             freq,
-            mag
+
+            smooth(
+
+                mag,
+
+                self.smoothing
+
+            )
         )
 
         self.phase_curve.setData(
@@ -684,4 +717,24 @@ class MainWindow(
             "Delay",
 
             f"{delay:.2f} ms"
+        )
+
+    def change_smoothing(
+            self,
+            index
+    ):
+
+        mapping = [
+
+            1,
+            3,
+            7,
+            15,
+            31
+        ]
+
+        self.smoothing = (
+            mapping[
+                index
+            ]
         )
