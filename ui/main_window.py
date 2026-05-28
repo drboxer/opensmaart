@@ -109,6 +109,27 @@ class MainWindow(
 
         self.meas = QSpinBox()
 
+        self.avg_box = (
+            QComboBox()
+        )
+
+        self.avg_box.addItems([
+
+            "Off",
+
+            "Fast",
+
+            "Slow",
+
+            "Infinite"
+
+        ])
+
+        self.avg_box.currentTextChanged.connect(
+
+            self.change_average
+        )
+
         self.ref.setValue(1)
 
         self.meas.setValue(2)
@@ -249,6 +270,8 @@ class MainWindow(
             self.ref,
 
             self.meas,
+
+            self.avg_box,
 
             self.smooth_box,
 
@@ -935,4 +958,13 @@ class MainWindow(
             ==
 
             Qt.CheckState.Checked
+        )
+
+    def change_average(
+            self,
+            value
+    ):
+
+        self.engine.avg_mode = (
+            value
         )

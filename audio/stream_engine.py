@@ -30,6 +30,15 @@ class StreamEngine(QObject):
         self.avg_phase = None
         self.avg_coh = None
 
+        self.avg_mode = "Fast"
+
+        self.avg_alpha = {
+            "Off": 1.0,
+            "Fast": 0.5,
+            "Slow": 0.15,
+            "Infinite": 0.03
+        }
+
         self.alpha = 0.20
         self.spl = SPLMeter()
 
@@ -102,10 +111,42 @@ class StreamEngine(QObject):
                 measurement
             )
 
-            self.avg_mag = self.smooth(
-                mag,
-                self.avg_mag
+            alpha = (
+                self.avg_alpha[
+                    self.avg_mode
+                ]
             )
+
+            if (
+                    getattr(
+                        self,
+                        "avg_mag",
+                        None
+                    )
+                    is None
+            ):
+
+                self.avg_mag = mag
+
+            else:
+
+                self.avg_mag = (
+
+                        alpha
+                        *
+                        mag
+
+                        +
+
+                        (
+                                1
+                                -
+                                alpha
+                        )
+
+                        *
+                        self.avg_mag
+                )
 
             self.avg_phase = self.smooth(
                 phase,
